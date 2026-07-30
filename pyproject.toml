@@ -26,12 +26,10 @@ classifiers = [
 ]
 keywords = ["application context", "dependency injection", "ddd", "clean architecture", "fastapi"]
 
-# Pinned to their repositories until each is on PyPI. PyPI rejects direct URL
-# dependencies, so these become plain names before this package is published.
 dependencies = [
-    "fractal-core @ git+https://github.com/Fractal-Forge/fractal-core@main",
-    "fractal-commands @ git+https://github.com/Fractal-Forge/fractal-commands@main",
-    "fractal-events @ git+https://github.com/Fractal-Forge/fractal-events@main",
+    "fractal-core",
+    "fractal-commands",
+    "fractal-events",
 ]
 
 [project.optional-dependencies]
@@ -48,7 +46,7 @@ gcp = [
     "fractal-repositories",
 ]
 processes = [
-    "fractal-processes @ git+https://github.com/Fractal-Forge/fractal-processes@main",
+    "fractal-processes",
 ]
 dev = [
     "fastapi",

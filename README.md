@@ -12,13 +12,6 @@
 [build-image]: https://github.com/Fractal-Forge/fractal-application/actions/workflows/build.yml/badge.svg
 [build-url]: https://github.com/Fractal-Forge/fractal-application/actions/workflows/build.yml
 
-## Not on PyPI yet
-
-`fractal-core`, `fractal-commands` and `fractal-events` are pinned to their git
-repositories in `pyproject.toml`, because none of them is published yet. PyPI
-rejects direct URL dependencies, so those lines must become plain names before
-this package can be released.
-
 ## Installation
 
 ```sh

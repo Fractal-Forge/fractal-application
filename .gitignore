@@ -66,6 +66,7 @@ dj-package/
 
 # Virtualenvs
 venv/
+.venv/
 env/
 
 .idea
@@ -88,3 +89,7 @@ archive.zip
 # vim temporary files
 *~
 .*.sw?
+
+# Lockfile: this is a library, so the lock pins only the dev environment.
+# Consumers resolve from pyproject.toml. Matches the other fractal-* libraries.
+uv.lock

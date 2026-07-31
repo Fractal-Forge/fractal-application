@@ -26,6 +26,23 @@ class ApplicationContext(object):
     def __getattr__(self, item):
         return None
 
+    def provides(self, name: str) -> bool:
+        """Whether this context actually has ``name``.
+
+        ``hasattr`` cannot answer that question here. ``__getattr__`` above
+        returns None for anything the context does not have, so every
+        ``hasattr(context, ...)`` is True and a typo is indistinguishable from
+        a registered service — which meant every guard in this package that
+        asked the question was silently always passing.
+
+        Looks where registration actually puts things: ``register_repository``
+        pre-declares the name on the class, ``install_service`` binds it there,
+        and the ``load_*`` methods set the resolved object on the instance.
+        """
+        if name in self.__dict__:
+            return True
+        return any(name in klass.__dict__ for klass in type(self).__mro__)
+
     @classmethod
     def register_repository(cls, name):
         setattr(cls, name, None)
@@ -297,25 +314,17 @@ class ApplicationContext(object):
             yield service
 
     def get_parameters(self, parameters: List[str]) -> Tuple:
-        """Read several context attributes at once.
+        """Read several context attributes at once, failing on the first one
+        this context does not provide.
 
-        Known defect, carried over from fractal-toolkit and left as-is here:
-        the guard below never fires. ``__getattr__`` returns None for anything
-        this context does not have, so ``hasattr`` is always True and the
-        FractalException is unreachable — asking for a service that was never
-        registered hands back ``(None,)`` instead of saying so.
-
-        That is the same silent failure FF-38 was about, one layer up. Fixing
-        it means either dropping the catch-all ``__getattr__`` or checking
-        ``__dict__`` directly, and both change what callers currently get back
-        from a context that is missing something. Worth doing deliberately, not
-        as a side effect of moving the file.
-
-        ``Settings.get_parameters`` in fractal-core does work, because Settings
-        has no catch-all ``__getattr__``.
+        This used to be unable to fail. The check was ``hasattr``, and
+        ``__getattr__`` answers None for everything, so a service that was
+        never registered came back as ``(None,)`` — the caller then carried a
+        None around until something far away tried to use it. Asking
+        :meth:`provides` instead makes the guard real.
         """
         for parameter in parameters:
-            if not hasattr(self, parameter):
+            if not self.provides(parameter):
                 from fractal_core import FractalException
 
                 raise FractalException(

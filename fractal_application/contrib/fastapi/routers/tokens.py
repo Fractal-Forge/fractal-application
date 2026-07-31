@@ -54,9 +54,11 @@ class FractalDummyJsonTokenService(DummyJsonTokenService, Service):
 
 
 def get_payload(fractal: Fractal, *, typ: str = "access"):
-    assert hasattr(fractal, "context")
-    context = getattr(fractal, "context")
-    assert hasattr(context, "token_service")
+    assert fractal.context is not None
+    context = fractal.context
+    # `provides`, not `hasattr`: the context answers None for anything it does
+    # not have, so hasattr is always True and this assert never fired.
+    assert context.provides("token_service")
 
     def _get_payload(token: str = Depends(oauth2_scheme)) -> TokenPayload:
         return context.token_service.verify(token, typ=typ)
@@ -67,10 +69,11 @@ def get_payload(fractal: Fractal, *, typ: str = "access"):
 def get_payload_roles(
     fractal: Fractal, *, endpoint: str = "", method: str = "get", typ: str = "access"
 ):
-    assert hasattr(fractal, "context")
-    context = getattr(fractal, "context")
-    assert hasattr(context, "token_service")
-    assert hasattr(context, "roles_service")
+    assert fractal.context is not None
+    context = fractal.context
+    # See get_payload above: hasattr cannot answer this question.
+    assert context.provides("token_service")
+    assert context.provides("roles_service")
 
     def _get_payload(token: str = Depends(oauth2_scheme)) -> TokenPayloadRoles:
         payload = context.token_service.verify(token, typ=typ)

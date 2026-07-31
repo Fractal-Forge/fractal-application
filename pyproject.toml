@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "fractal-application"
-version = "1.0.0"
+version = "1.1.0"
 description = "The top of the Fractal stack: the application context that installs an application's repositories and services, wires its command bus and event publisher, and health-checks them on startup."
 readme = "README.md"
 authors = [

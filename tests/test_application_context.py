@@ -126,19 +126,77 @@ def test_get_parameters_returns_what_the_context_has(make_context):
     assert isinstance(mailer, Mailer)
 
 
-def test_get_parameters_cannot_report_a_missing_one(make_context):
-    """Pins down a known defect rather than the intended behaviour.
+def test_get_parameters_reports_a_missing_one(make_context):
+    """The test this replaces pinned the defect instead of the intent.
 
-    get_parameters means to raise FractalException for anything the context
-    does not provide, but the catch-all __getattr__ makes hasattr always true,
-    so that branch is unreachable and a missing service comes back as None.
-    Carried over from fractal-toolkit deliberately — see the docstring on
-    get_parameters. If this test ever starts failing, the defect was fixed and
-    the test should become the raising one.
+    get_parameters could not fail: it asked hasattr, and __getattr__ answers
+    None for everything, so a service that was never registered came back as
+    (None,) and the caller carried a None around until something far away
+    tried to use it.
     """
     context = make_context()
 
-    assert context.get_parameters(["NEVER_REGISTERED"]) == (None,)
+    with pytest.raises(FractalException, match="NEVER_REGISTERED"):
+        context.get_parameters(["NEVER_REGISTERED"])
+
+
+def test_get_parameters_fails_even_when_some_are_present(make_context):
+    ApplicationContext.register_internal_service("mailer")(Mailer)
+    context = make_context()
+
+    with pytest.raises(FractalException, match="MISSING"):
+        context.get_parameters(["mailer", "MISSING"])
+
+
+# --------------------------------------------------------------------------- #
+# provides() — the honest version of hasattr for this class
+# --------------------------------------------------------------------------- #
+def test_hasattr_still_says_yes_to_everything(make_context):
+    """Documents why `provides` has to exist at all.
+
+    The catch-all __getattr__ is kept: plenty of code reads an optional
+    attribute off the context and expects None. The cost is that hasattr can
+    no longer distinguish a registered service from a typo, which is why every
+    guard in this package asks `provides` instead.
+    """
+    context = make_context()
+
+    assert hasattr(context, "definitely_not_registered")
+    assert context.definitely_not_registered is None
+    assert not context.provides("definitely_not_registered")
+
+
+def test_provides_sees_an_installed_service(make_context):
+    ApplicationContext.register_internal_service("mailer")(Mailer)
+
+    assert make_context().provides("mailer")
+
+
+def test_provides_sees_a_registered_repository(make_context):
+    class ThingRepository:
+        def is_healthy(self) -> bool:
+            return True
+
+    ApplicationContext.register_repository("thing_repository")(
+        lambda settings: ThingRepository()
+    )
+
+    assert make_context().provides("thing_repository")
+
+
+def test_provides_sees_what_load_sets_on_the_instance(make_context):
+    context = make_context()
+
+    assert context.provides("command_bus")
+    assert context.provides("event_publisher")
+
+
+def test_provides_sees_inherited_class_attributes(make_context):
+    """Registration lands on ApplicationContext itself, not on the subclass."""
+    context = make_context()
+
+    assert context.provides("settings")
+    assert context.provides("registered_command_handlers")
 
 
 # --------------------------------------------------------------------------- #

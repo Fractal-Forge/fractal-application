@@ -229,3 +229,26 @@ def test_a_fully_wired_fractal_constructs(make_context):
         context = ctx
 
     assert Wired()
+
+
+def test_a_fractal_subclass_can_enforce_its_own_abstract_methods(make_context):
+    """What ABC on Fractal buys, and why it is not decoration.
+
+    Fractal declares nothing abstract of its own — the wiring check lives in
+    __init__ — but ABC puts ABCMeta in the MRO, which is what makes
+    @abstractmethod work in subclasses. Same reasoning as fractal_core.Service.
+    """
+    from abc import abstractmethod
+
+    ctx = make_context()
+
+    class Reporting(Fractal):
+        settings = ctx.settings
+        context = ctx
+
+        @abstractmethod
+        def report(self) -> str:
+            """Subclasses must provide this."""
+
+    with pytest.raises(TypeError, match="report"):
+        Reporting()

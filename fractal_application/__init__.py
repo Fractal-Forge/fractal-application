@@ -16,7 +16,7 @@ extras: ``pip install fractal-application[fastapi,gcp]``.
 from fractal_application.application_context import ApplicationContext
 from fractal_application.fractal import Fractal
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 __all__ = [
     "ApplicationContext",

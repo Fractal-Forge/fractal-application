@@ -111,10 +111,18 @@ def test_an_unhealthy_service_stops_startup(make_context):
         make_context()
 
 
-def test_an_unknown_attribute_is_none_rather_than_an_error(make_context):
-    """__getattr__ is a catch-all, which is how the optional settings lookups
-    scattered through load() get away with bare getattr calls."""
-    assert make_context().nothing_called_this is None
+def test_an_unknown_attribute_raises(make_context):
+    """It used to answer None, for anything, forever.
+
+    That silence is what made `hasattr` useless here, and it turned
+    `getattr(context, name_from_a_payload)` into a None that failed somewhere
+    else entirely. Ordinary attribute behaviour names the missing thing at the
+    point it is asked for.
+    """
+    context = make_context()
+
+    with pytest.raises(AttributeError, match="nothing_called_this"):
+        _ = context.nothing_called_this
 
 
 def test_get_parameters_returns_what_the_context_has(make_context):
@@ -151,19 +159,19 @@ def test_get_parameters_fails_even_when_some_are_present(make_context):
 # --------------------------------------------------------------------------- #
 # provides() — the honest version of hasattr for this class
 # --------------------------------------------------------------------------- #
-def test_hasattr_still_says_yes_to_everything(make_context):
-    """Documents why `provides` has to exist at all.
+def test_hasattr_and_provides_now_agree(make_context):
+    """With the catch-all gone, hasattr is honest again.
 
-    The catch-all __getattr__ is kept: plenty of code reads an optional
-    attribute off the context and expects None. The cost is that hasattr can
-    no longer distinguish a registered service from a typo, which is why every
-    guard in this package asks `provides` instead.
+    `provides` stays because it says what it means at the call site, but it no
+    longer has to compensate for a __getattr__ that answered yes to everything.
     """
     context = make_context()
 
-    assert hasattr(context, "definitely_not_registered")
-    assert context.definitely_not_registered is None
+    assert not hasattr(context, "definitely_not_registered")
     assert not context.provides("definitely_not_registered")
+
+    assert hasattr(context, "command_bus")
+    assert context.provides("command_bus")
 
 
 def test_provides_sees_an_installed_service(make_context):

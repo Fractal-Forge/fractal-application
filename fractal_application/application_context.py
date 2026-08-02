@@ -23,19 +23,16 @@ class ApplicationContext(object):
             cls.instance.load()
         return cls.instance
 
-    def __getattr__(self, item):
-        return None
-
     def provides(self, name: str) -> bool:
-        """Whether this context actually has ``name``.
+        """Whether this context has ``name``.
 
-        ``hasattr`` cannot answer that question here. ``__getattr__`` above
-        returns None for anything the context does not have, so every
-        ``hasattr(context, ...)`` is True and a typo is indistinguishable from
-        a registered service — which meant every guard in this package that
-        asked the question was silently always passing.
+        There used to be a catch-all ``__getattr__`` returning None for
+        anything the context did not have, which made ``hasattr`` answer True
+        for everything and left this method as the only honest way to ask. The
+        catch-all is gone, so ``hasattr`` works again and the two now agree.
 
-        Looks where registration actually puts things: ``register_repository``
+        Kept because it says what it means at the call site, and because it
+        looks where registration actually puts things: ``register_repository``
         pre-declares the name on the class, ``install_service`` binds it there,
         and the ``load_*`` methods set the resolved object on the instance.
         """

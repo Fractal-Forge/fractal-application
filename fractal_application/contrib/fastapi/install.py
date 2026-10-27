@@ -36,6 +36,10 @@ def install_fastapi(settings: Settings):
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # A file a query or command answers with names itself in
+        # Content-Disposition; across origins a browser hides that header
+        # unless it is exposed, and the download loses its name.
+        expose_headers=["Content-Disposition"],
     )
 
     if sentry:
